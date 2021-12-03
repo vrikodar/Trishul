@@ -36,6 +36,10 @@ chmod +x trishul
 
 ## Options with Trishul
 
-**For Info on options with Trishul Check out the Trishul WiKi**
+**For Info on options with Trishul Check out the Trishul wiki**
 
-**https://github.com/SxNade/Trishul/Wiki**
+**https://github.com/SxNade/Trishul/wiki**
+
+## Future Updates
+
+https://github.com/SxNade/Trishul/wiki#future-updates
