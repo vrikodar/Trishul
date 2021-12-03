@@ -5,9 +5,10 @@ import optparse
 import sys
 import multiprocessing
 import fnmatch
-import re
+import textract
 
-# Important Note: Soon a library named glob will be used to find files with specific extension in upcoming versions of raptor
+# textract to parse almost any kind of file such docx etc.. even mp4s and shit xd
+# Important Note: Soon a library named glob will be used to find files with specific extension in upcoming versions of trishul
 
 white = "\033[1;37m"
 green = '\033[1;32;48m'
@@ -21,12 +22,13 @@ orng = '\033[0;33m'
 
 
 name = '''
-.-----.    _       .-.         .-.               ,-.    .--. 
-`-. .-'   :_;      : :         : :             .'  :   : ,. :
-  : :.--. .-. .--. : `-. .-..-.: :  _____ .-..-.`: :   : :: :
-  : :: ..': :`._-.': .. :: :; :: :_:_____:: `; : : : _ : :; :
-  :_;:_;  :_;`.__.':_;:_;`.__.'`.__;      `.__.' :_;:_;`.__.'
-                                                             '''
+ _______   _     _           _             __   ___  
+|__   __| (_)   | |         | |           /_ | / _ \ 
+   | |_ __ _ ___| |__  _   _| |________   _| || | | |
+   | | '__| / __| '_ \| | | | |______\ \ / / || | | |
+   | | |  | \__ \ | | | |_| | |       \ V /| || |_| |
+   |_|_|  |_|___/_| |_|\__,_|_|        \_/ |_(_)___/ 
+   '''
 
 print(f'''\n{white}{name}{noclr}
 Author: {bred}z3r0day{noclr}
@@ -62,15 +64,16 @@ def search_files_in_path(root_dir,list_or_dict_file_names,type_of_files,level_nu
     return extension_filter(fname, type_of_files)
 
 
-parser = optparse.OptionParser("\n./raptor [-h or --help] [-d or --dir]=<directory-path-to-start recursive search from> [-f or --file=file-names to look for in single quotes seprated by commas] [-s or --strings=strings to search for in given file-names, each strings should be in single quotes seprated by commas and in double quotes together [-t or --type txt]")
+parser = optparse.OptionParser("\n./trishul [-h or --help] [-d or --dir]=<directory-path-to-start recursive search from> [-f or --file=file-names to look for in single quotes seprated by commas] [-s or --strings=strings to search for in given file-names, each strings should be in single quotes seprated by commas and in double quotes together [-t or --type txt]")
 parser.add_option("-d", "--dir", dest="dir_path", type='string', help="specify the directory path to recursively search")
-parser.add_option("-f", "--files", dest="file_names", type='string', help="specify keywords to look for in filenames seprated by commas, wrapped in double quotes overall")
+parser.add_option("-f", "--files", dest="file_names", type='string', help=f"specify keywords to look for in filenames seprated by commas, wrapped in double quotes overall note that specifying {bred}*{noclr} scans all files with specified extension")
 parser.add_option("-s", "--strings", dest="strings", type='string', help="specify strings to look for seprated by commas, wrapped in double quotes overall")
 parser.add_option("-l", "--level", dest="level_number", type='int', help="specify level of default files and keywords to look for, only required if you don't specify custom files and strings, note that default level is 0")
-parser.add_option("-t", "--type", dest="type_of_file", type='string', help="specify file types, supported types are txt,doc,docx,xls,xlsx and default type is set to .txt,.docx,.doc,.xml")
+parser.add_option("-t", "--type", dest="type_of_file", type='string', help="specify file types, supported types are .csv,.doc,.docx,.eml,.epub,.gif,.htm,.html,.jpeg,.jpg,.json,.log,.mp3,.msg,.odt,.ogg,.pdf,.png,.pptx,.ps,.psv,.rtf,.tab,.tff,.tif,.tiff,.tsv,.txt,.wav,.xls,.xlsx,csv,doc,docx,eml,epub,gif,htm,html,jpeg,jpg,json,log,mp3,msg,odt,ogg,pdf,png,pptx,ps,psv,rtf,tab,tff,tif,tiff,tsv,txt,wav,xls,xlsx and default type is set to .txt,.docx,.doc,.xml,.pdf,.xls,.xlsx")
+parser.add_option("-v", "--verbose", dest="verbose_value", type='int', help=f"specify value for verbosity {bgreen}0 or 1{noclr}, 0 for disabling and 1 for enabling {bred}only required when looking for non text files{noclr}")
 (options, args) = parser.parse_args()
 
-def multiprocess_string_find(file_name_list,string_list_to_look_for):
+def multiprocess_string_find(file_name_list,string_list_to_look_for, verbose):
     def read_text(file_name_with_path):
         filehandle = open(file_name_with_path)
         lines_in_file = tuple(filehandle.readlines())
@@ -79,13 +82,23 @@ def multiprocess_string_find(file_name_list,string_list_to_look_for):
                 if keyword.lower() in line.lower():
                     print(f"\n[{bblue}INFO{noclr}] Found {white}Keyword{noclr}: {bred}{keyword}{noclr} on {white}line number:{noclr} {bgreen}{lines_in_file.index(line)}{noclr} in {bred}{file_name_with_path}{noclr}")
                     print(f"[{bgreen}LINE{noclr}] Contents: {white}{line}{noclr}")
+    def read_non_txt(doc_file_name, verbose):
+        text = textract.process(doc_file_name).decode('utf-8')
+        for keyword in string_list_to_look_for:
+            if keyword.lower() in text.lower():
+                print(f"\n[{bblue}INFO{noclr}] Found {white}Keyword{noclr}: {bred}{keyword}{noclr} in {bred}{doc_file_name}{noclr}")
+                try:
+                    if int(verbose) == 1:
+                        print(f"\n[{bblue}VERBOSE{noclr}] {white}Content{noclr}: {bred}{doc_file_name}{noclr} \n{cyan}{text}{noclr}")
+                        print(f"{white}----------------------------------------------------------------------------------------------------{noclr}")
+                except:
+                    print(f"\n[{bred}ERROR{noclr}] Please specify a valid {bred}verbose value{noclr} {white}Trishul requires a verbose value [-v or --verbose] of 0 or 1 when scanning non-txt files {noclr}\n")
     for file_name in file_name_list:
+        print(f"[{bblue}INFO{noclr}] scanning {bgreen}{file_name}{noclr}")
         if file_name.endswith('.txt'):
-            print(f"[{bblue}INFO{noclr}] scanning {bgreen}{file_name}{noclr}")
             read_text(file_name)
-        # else:
-        #     print("Will Add Functions For other file types asap")
-
+        else:
+            read_non_txt(file_name, verbose)
 
 # Why use Dictionaries ?? Becuase they are faster bruh!! for the speed you need....! yeah it is a very very small boost here xdd
 # Below Dictionaries for filenames and strings are level 0 , we will have more levels here soon..
@@ -121,8 +134,9 @@ if options.dir_path == None:
     sys.exit(0)
 elif options.file_names != None and options.strings != None:
     check_path_existence(options.dir_path)
+    verbose = options.verbose_value
     if options.type_of_file == None:
-        file_type_to_search = '.txt'
+        file_type_to_search = '.txt,.docx,.doc,.xls,.xlsx,.pdf'
     else:
         file_type_to_search = options.type_of_file
     try:
@@ -131,13 +145,14 @@ elif options.file_names != None and options.strings != None:
         keywords_to_search = list(options.strings.split(','))
         types_of_file = list(file_type_to_search.split(','))
         file_names = search_files_in_path(path_to_search,files_to_search,types_of_file,0)
-        multiprocess_string_find(file_names, keywords_to_search)
+        multiprocess_string_find(file_names, keywords_to_search, verbose)
     except Exception as e:
         print(f"\n[{bred}ERROR{noclr}] you need to split multiple values with commas and in a single double quote string\n")
         print("Example: ./raptor --dir / --files \"'value1','value2','valueX'\" ")
         sys.exit(0)
 else:
     check_path_existence(options.dir_path)
+    verbose = options.verbose_value
     if options.level_number == None:
         level_number = 0
         print(f"\n[{bred}ERROR{noclr}] Please specify a {bred}level number{noclr}\n")
@@ -156,7 +171,7 @@ else:
                 files_to_search = list(default_dict_filenames_l0.values())
                 strings_to_search = list(default_dict_strings_l0.values())
                 file_names = search_files_in_path(path_to_search,files_to_search,types_of_file,0)
-                multiprocess_string_find(file_names, strings_to_search)
+                multiprocess_string_find(file_names, strings_to_search, verbose)
         except Exception as e:
             print(e)
             print(f"\n[{bred}ERROR{noclr}] you need to split multiple values with commas and in a single double quote string\n")
