@@ -1,0 +1,167 @@
+#!/usr/bin/python3
+
+import os
+import optparse
+import sys
+import multiprocessing
+import fnmatch
+import re
+
+# Important Note: Soon a library named glob will be used to find files with specific extension in upcoming versions of raptor
+
+white = "\033[1;37m"
+green = '\033[1;32;48m'
+bgreen = '\033[1;32m'
+bred = '\033[1;31m'
+noclr = '\033[0m'
+bblue = '\033[1;34m'
+cyan = '\033[0;36m'
+orng = '\033[0;33m'
+
+
+
+name = '''
+.-----.    _       .-.         .-.               ,-.    .--. 
+`-. .-'   :_;      : :         : :             .'  :   : ,. :
+  : :.--. .-. .--. : `-. .-..-.: :  _____ .-..-.`: :   : :: :
+  : :: ..': :`._-.': .. :: :; :: :_:_____:: `; : : : _ : :; :
+  :_;:_;  :_;`.__.':_;:_;`.__.'`.__;      `.__.' :_;:_;`.__.'
+                                                             '''
+
+print(f'''\n{white}{name}{noclr}
+Author: {bred}z3r0day{noclr}
+{white}Copyright (c) 2021{noclr}\n''')
+
+def check_path_existence(path):
+    if not os.path.exists(path):
+        print(f"\n[{bred}ERROR{noclr}] Directory path:{bred}{options.dir_path}{noclr} not found\n")
+        sys.exit(0)
+
+def search_files_in_path(root_dir,list_or_dict_file_names,type_of_files,level_number):
+    if type(list_or_dict_file_names) == dict and level_number == 0:
+        fname = []
+        for root,d_names,f_names in os.walk(root_dir):
+            for file_name in f_names:
+                for file_to_look in list(list_or_dict_file_names.values()):
+                    if fnmatch.fnmatch(file_name, f'*{file_to_look}*'):
+                        fname.append(os.path.join(root, f))
+    elif type(list_or_dict_file_names) == list and level_number == 0:
+        fname = []
+        for root,d_names,f_names in os.walk(root_dir):
+            for file_name in f_names:
+                for file_to_look in list_or_dict_file_names:
+                    if fnmatch.fnmatch(file_name, f'*{file_to_look}*'):
+                        fname.append(os.path.join(root, file_name))
+    def extension_filter(list_of_files, types_of_file):
+        file_names_with_extension = []
+        for filename in list_of_files:
+            for extension in type_of_files:
+                if filename.endswith(extension):
+                    file_names_with_extension.append(filename)
+        return file_names_with_extension
+    return extension_filter(fname, type_of_files)
+
+
+parser = optparse.OptionParser("\n./raptor [-h or --help] [-d or --dir]=<directory-path-to-start recursive search from> [-f or --file=file-names to look for in single quotes seprated by commas] [-s or --strings=strings to search for in given file-names, each strings should be in single quotes seprated by commas and in double quotes together [-t or --type txt]")
+parser.add_option("-d", "--dir", dest="dir_path", type='string', help="specify the directory path to recursively search")
+parser.add_option("-f", "--files", dest="file_names", type='string', help="specify keywords to look for in filenames seprated by commas, wrapped in double quotes overall")
+parser.add_option("-s", "--strings", dest="strings", type='string', help="specify strings to look for seprated by commas, wrapped in double quotes overall")
+parser.add_option("-l", "--level", dest="level_number", type='int', help="specify level of default files and keywords to look for, only required if you don't specify custom files and strings, note that default level is 0")
+parser.add_option("-t", "--type", dest="type_of_file", type='string', help="specify file types, supported types are txt,doc,docx,xls,xlsx and default type is set to .txt,.docx,.doc,.xml")
+(options, args) = parser.parse_args()
+
+def multiprocess_string_find(file_name_list,string_list_to_look_for):
+    def read_text(file_name_with_path):
+        filehandle = open(file_name_with_path)
+        lines_in_file = tuple(filehandle.readlines())
+        for line in lines_in_file:
+            for keyword in string_list_to_look_for:
+                if keyword.lower() in line.lower():
+                    print(f"\n[{bblue}INFO{noclr}] Found {white}Keyword{noclr}: {bred}{keyword}{noclr} on {white}line number:{noclr} {bgreen}{lines_in_file.index(line)}{noclr} in {bred}{file_name_with_path}{noclr}")
+                    print(f"[{bgreen}LINE{noclr}] Contents: {white}{line}{noclr}")
+    for file_name in file_name_list:
+        if file_name.endswith('.txt'):
+            print(f"[{bblue}INFO{noclr}] scanning {bgreen}{file_name}{noclr}")
+            read_text(file_name)
+        # else:
+        #     print("Will Add Functions For other file types asap")
+
+
+# Why use Dictionaries ?? Becuase they are faster bruh!! for the speed you need....! yeah it is a very very small boost here xdd
+# Below Dictionaries for filenames and strings are level 0 , we will have more levels here soon..
+default_dict_filenames_l0 = {
+    0 : 'wp-config',
+    1 : 'password',
+    2 : 'secret',
+    3 : 'api',
+    4 :'apikey',
+    5 : 'id_rsa',
+    6 : 'passwd',
+    7 : 'shadow',
+    8 : 'creds',
+    9 : 'employee'
+}
+
+default_dict_strings_l0 = {
+    0 : 'DB_PASS',
+    1 : 'username',
+    2 : 'password',
+    3 : 'secret',
+    4 : 'apikey',
+    5 : 'api_key',
+    6 : '-----BEGIN OPENSSH PRIVATE KEY-----',
+    7 : 'credentials'
+}
+
+if options.dir_path == None:
+    parser.error(f'''
+    \n[{bred}Error{noclr}] Insufficent Arguments supplied {cyan}-d/--dir{noclr} missing value\n
+    {bred}Example:{noclr} {white}./raptor{noclr} {cyan}--dir{noclr} /path {cyan}--files{noclr} \"value1,value2,valueX\" {cyan}--strings{noclr} \"string1,string2,stringX\"
+    ''')
+    sys.exit(0)
+elif options.file_names != None and options.strings != None:
+    check_path_existence(options.dir_path)
+    if options.type_of_file == None:
+        file_type_to_search = '.txt'
+    else:
+        file_type_to_search = options.type_of_file
+    try:
+        path_to_search = options.dir_path
+        files_to_search = list(options.file_names.split(','))
+        keywords_to_search = list(options.strings.split(','))
+        types_of_file = list(file_type_to_search.split(','))
+        file_names = search_files_in_path(path_to_search,files_to_search,types_of_file,0)
+        multiprocess_string_find(file_names, keywords_to_search)
+    except Exception as e:
+        print(f"\n[{bred}ERROR{noclr}] you need to split multiple values with commas and in a single double quote string\n")
+        print("Example: ./raptor --dir / --files \"'value1','value2','valueX'\" ")
+        sys.exit(0)
+else:
+    check_path_existence(options.dir_path)
+    if options.level_number == None:
+        level_number = 0
+        print(f"\n[{bred}ERROR{noclr}] Please specify a {bred}level number{noclr}\n")
+    elif options.level_number < 3:
+        if options.type_of_file == None:
+            file_type_to_search = '.txt,.docx,.doc,.xml'
+        else:
+            file_type_to_search = options.type_of_file
+        level_number = options.level_number
+        print(f"[{bblue}INFO{noclr}] scanning for {bred}Default{noclr} files and keywords...")
+        print(f"[{bblue}INFO{noclr}] scanning {bgreen}level{noclr} set to {bred}{level_number}{noclr}")
+        try:
+            path_to_search = options.dir_path
+            types_of_file = list(file_type_to_search.split(','))
+            if level_number == 0:
+                files_to_search = list(default_dict_filenames_l0.values())
+                strings_to_search = list(default_dict_strings_l0.values())
+                file_names = search_files_in_path(path_to_search,files_to_search,types_of_file,0)
+                multiprocess_string_find(file_names, strings_to_search)
+        except Exception as e:
+            print(e)
+            print(f"\n[{bred}ERROR{noclr}] you need to split multiple values with commas and in a single double quote string\n")
+            print("Example: ./raptor --dir / --files \"'value1','value2','valueX'\" ")
+            sys.exit(0)
+    else:
+	    print(f"\n[{bred}ERROR{noclr}] something went wrong {bred}level number{noclr} must be less than 3\n")
+
