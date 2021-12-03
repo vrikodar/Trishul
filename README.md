@@ -8,7 +8,7 @@
 ## Prerequisites 
 
 **Before you can start using Trishul you need to install some dependencies that Trishul depends on**
-
+___
 ### Installing textract and antiword
 
 *Trishul utilizes the powerful textract library to extract text from any type of non-txt file such as xlsx,docx or even jpegs and mp4s*
@@ -24,7 +24,7 @@ apt install antiword
 ```
 ## Installing and Running Trishul
 
-**Once you have the dependencies in place, you can start using Trishul
+**Once you have the dependencies in place, you can start using Trishul**
 
 ```bash
 git clone https://github.com/SxNade/Trishul
