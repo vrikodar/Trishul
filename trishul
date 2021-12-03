@@ -68,12 +68,18 @@ parser = optparse.OptionParser("\n./trishul [-h or --help] [-d or --dir]=<direct
 parser.add_option("-d", "--dir", dest="dir_path", type='string', help="specify the directory path to recursively search")
 parser.add_option("-f", "--files", dest="file_names", type='string', help=f"specify keywords to look for in filenames seprated by commas, wrapped in double quotes overall note that specifying {bred}*{noclr} scans all files with specified extension")
 parser.add_option("-s", "--strings", dest="strings", type='string', help="specify strings to look for seprated by commas, wrapped in double quotes overall")
-parser.add_option("-l", "--level", dest="level_number", type='int', help="specify level of default files and keywords to look for, only required if you don't specify custom files and strings, note that default level is 0")
+parser.add_option("-l", "--level", dest="level_number", type='int', help="specify level of default files and keywords to look for, only required if you don't specify custom files and strings")
 parser.add_option("-t", "--type", dest="type_of_file", type='string', help="specify file types, supported types are .csv,.doc,.docx,.eml,.epub,.gif,.htm,.html,.jpeg,.jpg,.json,.log,.mp3,.msg,.odt,.ogg,.pdf,.png,.pptx,.ps,.psv,.rtf,.tab,.tff,.tif,.tiff,.tsv,.txt,.wav,.xls,.xlsx,csv,doc,docx,eml,epub,gif,htm,html,jpeg,jpg,json,log,mp3,msg,odt,ogg,pdf,png,pptx,ps,psv,rtf,tab,tff,tif,tiff,tsv,txt,wav,xls,xlsx and default type is set to .txt,.docx,.doc,.xml,.pdf,.xls,.xlsx")
 parser.add_option("-v", "--verbose", dest="verbose_value", type='int', help=f"specify value for verbosity {bgreen}0 or 1{noclr}, 0 for disabling and 1 for enabling {bred}only required when looking for non text files{noclr}")
 (options, args) = parser.parse_args()
 
 def multiprocess_string_find(file_name_list,string_list_to_look_for, verbose):
+    try:
+        if verbose != None and int(verbose) == 1:
+            print(f"\n[{bblue}VERBOSE{noclr}] {white}File-Names{noclr}: {file_name_list}")
+            print(f"{white}----------------------------------------------------------------------------------------------------{noclr}")
+    except:
+        print(f"\n[{bred}ERROR{noclr}] Please specify a valid {bred}verbose value{noclr} {white}Trishul requires a verbose value [-v or --verbose] of 0 or 1 when scanning non-txt files {noclr}\n")
     def read_text(file_name_with_path):
         filehandle = open(file_name_with_path)
         lines_in_file = tuple(filehandle.readlines())
@@ -95,7 +101,7 @@ def multiprocess_string_find(file_name_list,string_list_to_look_for, verbose):
                     print(f"\n[{bred}ERROR{noclr}] Please specify a valid {bred}verbose value{noclr} {white}Trishul requires a verbose value [-v or --verbose] of 0 or 1 when scanning non-txt files {noclr}\n")
     for file_name in file_name_list:
         print(f"[{bblue}INFO{noclr}] scanning {bgreen}{file_name}{noclr}")
-        if file_name.endswith('.txt'):
+        if file_name.endswith('.txt') or file_name.endswith('.php'):
             read_text(file_name)
         else:
             read_non_txt(file_name, verbose)
@@ -112,7 +118,8 @@ default_dict_filenames_l0 = {
     6 : 'passwd',
     7 : 'shadow',
     8 : 'creds',
-    9 : 'employee'
+    9 : 'employee',
+    10 : 'access'
 }
 
 default_dict_strings_l0 = {
@@ -136,7 +143,7 @@ elif options.file_names != None and options.strings != None:
     check_path_existence(options.dir_path)
     verbose = options.verbose_value
     if options.type_of_file == None:
-        file_type_to_search = '.txt,.docx,.doc,.xls,.xlsx,.pdf'
+        file_type_to_search = '.txt,.docx,.doc,.xls,.xlsx,.pdf,.log,.php'
     else:
         file_type_to_search = options.type_of_file
     try:
@@ -158,7 +165,7 @@ else:
         print(f"\n[{bred}ERROR{noclr}] Please specify a {bred}level number{noclr}\n")
     elif options.level_number < 3:
         if options.type_of_file == None:
-            file_type_to_search = '.txt,.docx,.doc,.xml'
+            file_type_to_search = '.txt,.docx,.doc,.xls,.xlsx,.pdf,.log,.php'
         else:
             file_type_to_search = options.type_of_file
         level_number = options.level_number
