@@ -7,7 +7,7 @@
 
 ## Prerequisites 
 
-**Before you can start using Trishul you need to install some dependencies that Trishul depends on**
+**Before you can start using Trishul you need to install some dependencies that Trishul requires in order to function properly**
 ___
 ### Installing textract and antiword
 
